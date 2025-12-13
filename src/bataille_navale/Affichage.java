@@ -1,6 +1,6 @@
 package bataille_navale;
 
-import java.util.Scanner;
+// import java.util.Scanner;
 
 public class Affichage {
     public void afficherGrille(Grille g) {

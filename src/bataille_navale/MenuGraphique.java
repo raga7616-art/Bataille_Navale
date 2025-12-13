@@ -14,6 +14,29 @@ public class MenuGraphique extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null); // Centre la fenêtre à l'écran
 
+        // --- SECTION MENU BAR (VUE) ---
+        // Création de la barre de menu
+        JMenuBar menuBar = new JMenuBar();
+
+        // Création du menu "Options"
+        JMenu menuOptions = new JMenu("Options");
+
+        // Création de l'item "Réglages"
+        JMenuItem itemReglages = new JMenuItem("Réglages");
+
+        // --- CONNEXION CONTROLEUR ---
+        // On instancie le contrôleur en lui passant la fenêtre actuelle (this)
+        ControleurMenu controleur = new ControleurMenu(this);
+        itemReglages.addActionListener(controleur);
+
+        // Assemblage
+        menuOptions.add(itemReglages);
+        menuBar.add(menuOptions);
+
+        // Attachement de la barre de menu à la fenêtre
+        this.setJMenuBar(menuBar);
+        // ------------------------------
+
         // 2. Création du conteneur principal (Panneau)
         JPanel panel = new JPanel();
         // Layout : Grille de 4 lignes (Titre + 3 boutons), 1 colonne, espacement de

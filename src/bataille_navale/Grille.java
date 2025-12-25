@@ -109,12 +109,6 @@ public class Grille {
                 }
             }
         }
-        if (casesRestantes == 0)
-            return true;
-
-        // (DEBUG TEMPORAIRE)
-        // System.out.println(" [Debug] Il reste encore " + casesRestantes + " cases de
-        // navires à toucher.");
-        return false;
+        return casesRestantes == 0;
     }
 }

@@ -130,12 +130,6 @@ public class MenuGraphique extends JFrame {
         aide.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         this.add(aide, BorderLayout.SOUTH);
 
-        // Un petit filou pour mettre à jour le texte du bas selon le jeu
-        // (En vrai MVC strict, on utiliserait un Observer, mais ici on va tricher un
-        // peu
-        // en ajoutant un thread qui met à jour le texte, ou on laisse statique pour
-        // l'instant)
-
         this.revalidate();
         this.repaint();
     }

@@ -26,7 +26,7 @@ public class Jeu {
     public Jeu() {
         this.grilleJ1 = new Grille();
         this.grilleJ2 = new Grille();
-        this.joueurCourant = 1; // Le joueur 1 commence par placer
+        this.joueurCourant = 1; // Initialisation du joueur 1
         this.phaseCourante = Phase.PLACEMENT;
 
         // Initialisation des flottes à placer

@@ -6,12 +6,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 /**
- * GrillePanel : Le composant graphique qui dessine l'état de la grille.
- * Il gère désormais les clics intelligemment selon la PHASE du jeu.
+ * GrillePanel : Composant graphique affichant la grille.
+ * Gère les interactions souris en fonction de la phase de jeu.
  */
 public class GrillePanel extends JPanel {
     private Grille grille;
-    private Jeu jeu; // L'arbitre !
+    private Jeu jeu; // Référence vers le moteur de jeu
     private int idJoueurProprietaire; // 1 pour J1, 2 pour J2
     private final int TAILLE_CASE = 30; // Taille en pixels d'une case
 

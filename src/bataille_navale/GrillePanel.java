@@ -45,15 +45,24 @@ public class GrillePanel extends JPanel {
                         g.setColor(new Color(173, 216, 230)); // Bleu clair
                         break;
                     case Grille.NAVIRE:
-                        // LOGIQUE DE VISIBILITÉ (BROUILLARD DE GUERRE)
-                        // On voit les bateaux si :
-                        // 1. C'est la phase de PLACEMENT
-                        // 2. OU si c'est MA grille (je vois ma flotte)
-                        // 3. OU (Optionnel pour triche/debug)
-                        if (jeu.getPhase() == Jeu.Phase.PLACEMENT || jeu.getJoueurCourant() == idJoueurProprietaire) {
+                        // LOGIQUE DE VISIBILITÉ (ANTI-TRICHE / BROUILLARD DE GUERRE)
+                        boolean visible = false;
+
+                        // 1. En PHASE PLACEMENT : Seul le propriétaire voit sa grille QUAND C'EST SON
+                        // TOUR
+                        if (jeu.getPhase() == Jeu.Phase.PLACEMENT) {
+                            if (jeu.getJoueurCourant() == idJoueurProprietaire) {
+                                visible = true;
+                            }
+                        }
+                        // 2. En PHASE JEU : On ne voit JAMAIS les bateaux intacts (sauf cheat code)
+                        // (Ils deviendront rouges quand touchés, géré par le cas TOUCHE)
+
+                        // Application de la couleur
+                        if (visible) {
                             g.setColor(Color.GRAY);
                         } else {
-                            g.setColor(new Color(173, 216, 230)); // Caché pour l'adversaire
+                            g.setColor(new Color(173, 216, 230)); // Caché (comme de l'eau)
                         }
                         break;
                     case Grille.LOUPE:
@@ -100,6 +109,8 @@ public class GrillePanel extends JPanel {
 
                     if (boutonSouris == MouseEvent.BUTTON3) { // Clic Droit = Rotation
                         jeu.basculerOrientation();
+                        System.out.println(
+                                "Orientation : " + (jeu.isOrientationHorizontale() ? "Horizontale" : "Verticale"));
                     } else { // Clic Gauche = Placer
                         jeu.placerNavireJoueur(x, y);
                     }

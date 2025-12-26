@@ -124,11 +124,28 @@ public class MenuGraphique extends JFrame {
         this.add(centre, BorderLayout.CENTER);
 
         // Bandeau d'aide au sud
-        JLabel aide = new JLabel("PHASE DE PLACEMENT : Joueur 1, placez vos navires. (Clic Droit pour tourner)",
-                SwingConstants.CENTER);
-        aide.setFont(new Font("Arial", Font.ITALIC, 14));
+        JLabel aide = new JLabel("Initialisation...", SwingConstants.CENTER);
+        aide.setFont(new Font("Arial", Font.BOLD, 16)); // Plus gros pour être lisible
+        aide.setForeground(new Color(50, 50, 50));
         aide.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
         this.add(aide, BorderLayout.SOUTH);
+
+        // TIMER DE RAFRAÎCHISSEMENT DE L'INTERFACE
+        // Permet de mettre à jour le texte d'aide en temps réel selon l'état du jeu
+        new Timer(100, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // On demande au moteur : "Quoi faire maintenant ?"
+                String instruction = monJeu.getInstructionPlacement();
+                aide.setText(instruction);
+
+                // Si on a fini le placement, on change le style
+                if (monJeu.getPhase() == Jeu.Phase.JEU) {
+                    aide.setForeground(new Color(200, 0, 0)); // Rouge combat
+                    aide.setText("C'est la GUERRE ! Joueur " + monJeu.getJoueurCourant() + ", tirez sur l'ennemi !");
+                }
+            }
+        }).start();
 
         this.revalidate();
         this.repaint();

@@ -15,6 +15,10 @@ public class GrillePanel extends JPanel {
     private int idJoueurProprietaire; // 1 pour J1, 2 pour J2
     private final int TAILLE_CASE = 30; // Taille en pixels d'une case
 
+    // Pour l'effet "Ghost" (Prévisualisation)
+    private int sourisX = -1;
+    private int sourisY = -1;
+
     public GrillePanel(Grille grille, Jeu jeu, int idJoueurProprietaire) {
         this.grille = grille;
         this.jeu = jeu;
@@ -22,12 +26,29 @@ public class GrillePanel extends JPanel {
 
         this.setPreferredSize(new Dimension(Grille.TAILLE * TAILLE_CASE + 1, Grille.TAILLE * TAILLE_CASE + 1));
 
-        // Ajout de l'écouteur de souris complet
+        // Ajout de l'écouteur de souris pour les CLICS
         this.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // On passe : X, Y, et le Bouton (1=Gauche, 3=Droit)
                 gererClic(e.getX(), e.getY(), e.getButton());
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                // Quand la souris sort, on cache le fantôme
+                sourisX = -1;
+                sourisY = -1;
+                repaint();
+            }
+        });
+
+        // Ajout de l'écouteur de mouvement pour le GHOST EFFECT
+        this.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                sourisX = e.getX() / TAILLE_CASE;
+                sourisY = e.getY() / TAILLE_CASE;
+                repaint(); // Rafraîchissement pour l'animation
             }
         });
     }
@@ -36,6 +57,7 @@ public class GrillePanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        // 1. Dessin de la grille et des états fixes
         for (int y = 0; y < Grille.TAILLE; y++) {
             for (int x = 0; x < Grille.TAILLE; x++) {
                 int etat = grille.getEtat(x, y);
@@ -45,24 +67,18 @@ public class GrillePanel extends JPanel {
                         g.setColor(new Color(173, 216, 230)); // Bleu clair
                         break;
                     case Grille.NAVIRE:
-                        // LOGIQUE DE VISIBILITÉ (ANTI-TRICHE / BROUILLARD DE GUERRE)
+                        // VISIBILITÉ (BROUILLARD DE GUERRE)
                         boolean visible = false;
-
-                        // 1. En PHASE PLACEMENT : Seul le propriétaire voit sa grille QUAND C'EST SON
-                        // TOUR
                         if (jeu.getPhase() == Jeu.Phase.PLACEMENT) {
                             if (jeu.getJoueurCourant() == idJoueurProprietaire) {
                                 visible = true;
                             }
                         }
-                        // 2. En PHASE JEU : On ne voit JAMAIS les bateaux intacts (sauf cheat code)
-                        // (Ils deviendront rouges quand touchés, géré par le cas TOUCHE)
 
-                        // Application de la couleur
                         if (visible) {
                             g.setColor(Color.GRAY);
                         } else {
-                            g.setColor(new Color(173, 216, 230)); // Caché (comme de l'eau)
+                            g.setColor(new Color(173, 216, 230)); // Caché
                         }
                         break;
                     case Grille.LOUPE:
@@ -79,16 +95,47 @@ public class GrillePanel extends JPanel {
             }
         }
 
-        // INDICATEUR VISUEL (Tour actif)
-        // Si c'est à moi de jouer SUR CETTE GRILLE
+        // 2. Dessin du GHOST EFFECT (Par-dessus la grille)
+        dessinerGhost(g);
+
+        // 3. Cadre vert si c'est mon tour de placer
         if (jeu != null) {
             boolean cestMonTour = (jeu.getJoueurCourant() == idJoueurProprietaire);
-
-            // En phase placement, j'encadre MA grille en vert
             if (jeu.getPhase() == Jeu.Phase.PLACEMENT && cestMonTour) {
                 g.setColor(Color.GREEN);
                 g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
                 g.drawRect(1, 1, getWidth() - 3, getHeight() - 3);
+            }
+        }
+    }
+
+    private void dessinerGhost(Graphics g) {
+        // Prévisualisation uniquement en phase de placement sur sa propre grille
+        if (jeu.getPhase() == Jeu.Phase.PLACEMENT &&
+                jeu.getJoueurCourant() == idJoueurProprietaire &&
+                sourisX >= 0 && sourisX < Grille.TAILLE && sourisY >= 0 && sourisY < Grille.TAILLE) {
+
+            Navire navireCourant = jeu.getNavireCourant();
+
+            if (navireCourant != null) {
+                int taille = navireCourant.getTaille();
+                boolean horizontal = jeu.isOrientationHorizontale();
+
+                // On vérifie si le placement serait valide
+                boolean valide = grille.peutPlacer(taille, sourisX, sourisY, horizontal);
+
+                // Vert transparent si OK, Rouge transparent si Collision
+                g.setColor(valide ? new Color(0, 255, 0, 100) : new Color(255, 0, 0, 100));
+
+                for (int i = 0; i < taille; i++) {
+                    int cx = horizontal ? sourisX + i : sourisX;
+                    int cy = horizontal ? sourisY : sourisY + i;
+
+                    // On ne dessine que ce qui dépasse pas trop (ou on coupe)
+                    if (cx < Grille.TAILLE && cy < Grille.TAILLE) {
+                        g.fillRect(cx * TAILLE_CASE, cy * TAILLE_CASE, TAILLE_CASE, TAILLE_CASE);
+                    }
+                }
             }
         }
     }
@@ -104,13 +151,13 @@ public class GrillePanel extends JPanel {
 
             // --- CAS 1 : PHASE DE PLACEMENT ---
             if (jeu.getPhase() == Jeu.Phase.PLACEMENT) {
-                // Le joueur doit cliquer sur SA PROPRE grille
                 if (jeu.getJoueurCourant() == idJoueurProprietaire) {
-
                     if (boutonSouris == MouseEvent.BUTTON3) { // Clic Droit = Rotation
                         jeu.basculerOrientation();
+                        // Feedback Console
                         System.out.println(
                                 "Orientation : " + (jeu.isOrientationHorizontale() ? "Horizontale" : "Verticale"));
+                        repaint(); // Mettre à jour le fantôme immédiatement
                     } else { // Clic Gauche = Placer
                         jeu.placerNavireJoueur(x, y);
                     }
@@ -120,10 +167,17 @@ public class GrillePanel extends JPanel {
 
             // --- CAS 2 : PHASE DE JEU (TIR) ---
             else if (jeu.getPhase() == Jeu.Phase.JEU) {
-                // Le joueur doit cliquer sur la grille ADVERSE
                 if (jeu.getJoueurCourant() != idJoueurProprietaire) {
-                    jeu.jouerTour(x, y);
-                    redessinerInterface();
+                    if (boutonSouris == MouseEvent.BUTTON1) {
+                        // ANTI-GASPI : Vérification avant de tirer
+                        if (grille.estDejaJoue(x, y)) {
+                            System.out.println("[UI] Clic inutile : case déjà jouée.");
+                            return; // On ne fait rien
+                        }
+
+                        jeu.jouerTour(x, y);
+                        redessinerInterface();
+                    }
                 }
             }
         }

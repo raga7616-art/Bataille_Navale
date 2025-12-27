@@ -95,6 +95,8 @@ public class MenuGraphique extends JFrame {
 
         // 3. Création du moteur
         Jeu monJeu = new Jeu();
+        // On donne la référence de la fenêtre au moteur pour le retour menu
+        monJeu.setFenetreJeu(this);
 
         // 4. Création des Vues
         GrillePanel panelJ1 = new GrillePanel(monJeu.getGrilleJ1(), monJeu, 1);

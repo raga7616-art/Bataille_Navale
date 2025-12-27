@@ -9,10 +9,24 @@ public class Grille {
     public static final int TOUCHE = 3; // Navire touché
 
     private int[][] matrice;
+    private Navire[][] grilleNavires; // Pour savoir quel navire est sur quelle case
 
     public Grille() {
         this.matrice = new int[TAILLE][TAILLE];
+        this.grilleNavires = new Navire[TAILLE][TAILLE];
         // Initialisation à 0 (EAU) par défaut
+    }
+
+    /**
+     * Réinitialise la grille pour une nouvelle partie.
+     */
+    public void vider() {
+        for (int y = 0; y < TAILLE; y++) {
+            for (int x = 0; x < TAILLE; x++) {
+                this.matrice[y][x] = EAU;
+                this.grilleNavires[y][x] = null;
+            }
+        }
     }
 
     /**
@@ -62,32 +76,61 @@ public class Grille {
     }
 
     /**
-     * Place définitivement le navire (On suppose que peutPlacer a renvoyé true
-     * avant).
+     * Place définitivement le navire.
+     * Prend maintenant l'objet Navire pour le stocker.
      */
-    public void placerNavire(int taille, int x, int y, boolean horizontal) {
-        for (int i = 0; i < taille; i++) {
+    public void placerNavire(Navire navire, int x, int y, boolean horizontal) {
+        for (int i = 0; i < navire.getTaille(); i++) {
             int cx = horizontal ? x + i : x;
             int cy = horizontal ? y : y + i;
             matrice[cy][cx] = NAVIRE;
+            grilleNavires[cy][cx] = navire; // On lie la case au bateau
         }
     }
 
     /**
+     * Vérifie si une case a déjà été jouée (Touché ou Loupé).
+     */
+    public boolean estDejaJoue(int x, int y) {
+        if (!estDansGrille(x, y))
+            return true;
+        return matrice[y][x] == TOUCHE || matrice[y][x] == LOUPE;
+    }
+
+    /**
      * Gère un tir reçu. Renvoie true si un navire est touché.
+     * Met à jour l'état du navire si touché.
      */
     public boolean recevoirTir(int x, int y) {
-        if (x < 0 || x >= TAILLE || y < 0 || y >= TAILLE)
+        if (!estDansGrille(x, y))
             return false;
 
         if (matrice[y][x] == NAVIRE) {
             matrice[y][x] = TOUCHE;
+            // On notifie le navire qu'il a mal
+            if (grilleNavires[y][x] != null) {
+                grilleNavires[y][x].estTouche();
+            }
             return true;
         } else if (matrice[y][x] == EAU) {
             matrice[y][x] = LOUPE;
             return false;
         }
-        return false; // Déjà tiré ici
+        return false; // Déjà tiré
+    }
+
+    /**
+     * Récupère le navire situé à cette position (utile pour savoir s'il vient de
+     * couler).
+     */
+    public Navire getNavireEn(int x, int y) {
+        if (!estDansGrille(x, y))
+            return null;
+        return grilleNavires[y][x];
+    }
+
+    private boolean estDansGrille(int x, int y) {
+        return x >= 0 && x < TAILLE && y >= 0 && y < TAILLE;
     }
 
     public int getEtat(int x, int y) {
@@ -96,9 +139,6 @@ public class Grille {
 
     /**
      * Vérifie si tous les navires ont été coulés.
-     * 
-     * @return true si plus aucune case NAVIRE ne subsiste (uniquement EAU, LOUPE ou
-     *         TOUCHE).
      */
     public boolean estDefaite() {
         int casesRestantes = 0;

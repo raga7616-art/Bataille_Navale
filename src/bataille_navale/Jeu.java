@@ -18,8 +18,10 @@ public class Jeu {
     private List<Navire> naviresAPlacerJ1;
     private List<Navire> naviresAPlacerJ2;
 
-    // Orientation actuelle pour le placement (true = horizontal, false = vertical)
     private boolean orientationHorizontale = true;
+
+    // Référence vers la fenêtre graphique pour pouvoir la fermer
+    private javax.swing.JFrame fenetreJeu;
 
     public Jeu() {
         this.grilleJ1 = new Grille();
@@ -30,6 +32,10 @@ public class Jeu {
         // Initialisation des flottes à placer avec NOMS et TAILLES officielles
         this.naviresAPlacerJ1 = initFlotte();
         this.naviresAPlacerJ2 = initFlotte();
+    }
+
+    public void setFenetreJeu(javax.swing.JFrame f) {
+        this.fenetreJeu = f;
     }
 
     private List<Navire> initFlotte() {
@@ -69,6 +75,17 @@ public class Jeu {
 
     public boolean isOrientationHorizontale() {
         return orientationHorizontale;
+    }
+
+    /**
+     * Helper pour l'interface : Renvoie le prochain navire à placer sans le
+     * retirer.
+     */
+    public Navire getNavireCourant() {
+        List<Navire> liste = (joueurCourant == 1) ? naviresAPlacerJ1 : naviresAPlacerJ2;
+        if (liste.isEmpty())
+            return null;
+        return liste.get(0);
     }
 
     /**
@@ -112,7 +129,8 @@ public class Jeu {
 
         // On vérifie si on peut le placer
         if (grilleActuelle.peutPlacer(taille, x, y, orientationHorizontale)) {
-            grilleActuelle.placerNavire(taille, x, y, orientationHorizontale);
+            // CORRECTION : On passe l'objet Navire entier
+            grilleActuelle.placerNavire(navireModel, x, y, orientationHorizontale);
             naviresRestants.remove(0); // On retire le navire de la liste
             System.out.println("[Moteur] " + navireModel.getNom() + " placé pour Joueur " + joueurCourant);
 
@@ -161,17 +179,27 @@ public class Jeu {
         if (resultat) {
             System.out.println("  -> TOUCHÉ ! Le Joueur " + joueurCourant + " garde la main.");
 
+            // GESTION "COULÉ"
+            Navire navireTouche = grilleCible.getNavireEn(x, y);
+            if (navireTouche != null && navireTouche.estCoule()) {
+                javax.swing.JOptionPane.showMessageDialog(null,
+                        "BOUM ! Vous avez COULÉ le " + navireTouche.getNom() + " !");
+            } else {
+                // Juste touché
+                // javax.swing.JOptionPane.showMessageDialog(null, "TOUCHÉ !"); // Optionnel,
+                // peut être trop intrusif
+            }
+
             // VERIFICATION VICTOIRE
             if (grilleCible.estDefaite()) {
                 System.out.println("#########################################");
                 System.out.println("VICTOIRE DU JOUEUR " + joueurCourant + " !");
                 System.out.println("#########################################");
 
-                // POP-UP VISUEL POUR LE JOUEUR
-                javax.swing.JOptionPane.showMessageDialog(null, "VICTOIRE DU JOUEUR " + joueurCourant + " !");
-
-                phaseCourante = Phase.FIN;
+                // FIN DE PARTIE PROPRE
+                gererFinDePartie(joueurCourant);
             }
+
             // Sinon, le joueur rejoue (on ne change pas joueurCourant)
 
         } else {
@@ -179,5 +207,56 @@ public class Jeu {
             // Changement de joueur
             joueurCourant = (joueurCourant == 1) ? 2 : 1;
         }
+    }
+
+    /**
+     * Affiche le dialogue de fin et propose de rejouer ou quitter.
+     */
+    private void gererFinDePartie(int vainqueur) {
+        phaseCourante = Phase.FIN;
+
+        Object[] options = { "Rejouer", "Quitter" };
+        int choix = javax.swing.JOptionPane.showOptionDialog(null,
+                "FÉLICITATIONS !\n\nLe JOUEUR " + vainqueur + " a gagné la partie !",
+                "Victoire",
+                javax.swing.JOptionPane.YES_NO_OPTION,
+                javax.swing.JOptionPane.INFORMATION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        if (choix == javax.swing.JOptionPane.YES_OPTION) {
+            reinitialiserPartie();
+        } else {
+            // RETOUR AU MENU
+            if (this.fenetreJeu != null) {
+                this.fenetreJeu.dispose(); // Ferme la fenêtre de jeu
+            }
+            // On relance le menu
+            MenuGraphique menu = new MenuGraphique();
+            menu.setVisible(true);
+        }
+    }
+
+    /**
+     * Remet le jeu à zéro pour une nouvelle partie.
+     */
+    private void reinitialiserPartie() {
+        System.out.println("[Moteur] Réinitialisation de la partie...");
+
+        // 1. On vide les grilles
+        grilleJ1.vider();
+        grilleJ2.vider();
+
+        // 2. On remet les paramètres par défaut
+        joueurCourant = 1;
+        phaseCourante = Phase.PLACEMENT;
+        orientationHorizontale = true;
+
+        // 3. On redonne une flotte neuve à chacun
+        naviresAPlacerJ1 = initFlotte();
+        naviresAPlacerJ2 = initFlotte();
+
+        System.out.println("[Moteur] Partie relancée ! Au Joueur 1 de placer ses navires.");
     }
 }

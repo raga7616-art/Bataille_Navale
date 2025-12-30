@@ -14,6 +14,10 @@ public class Jeu {
     private int joueurCourant; // 1 ou 2
     private Phase phaseCourante;
 
+    // Mode IA
+    private boolean modeIA = false;
+    private NiveauDifficulte niveauIA = NiveauDifficulte.FACILE;
+    private IA ia;
     // Modèles de navires à placer (Nom + Taille)
     private List<Navire> naviresAPlacerJ1;
     private List<Navire> naviresAPlacerJ2;

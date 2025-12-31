@@ -1,5 +1,8 @@
 package bataille_navale;
 
+import java.util.List;
+import java.util.Random;
+
 public class Grille {
     // Constantes pour la lisibilité
     public static final int TAILLE = 10;
@@ -73,6 +76,28 @@ public class Grille {
             }
         }
         return true;
+    }
+
+    /**
+     * Place une liste de navires aléatoirement sur la grille.
+     * 
+     * @param navires La liste des navires à placer.
+     */
+    public void placerNaviresAleatoirement(List<Navire> navires) {
+        Random rand = new Random();
+        for (Navire navire : navires) {
+            boolean place = false;
+            while (!place) {
+                int x = rand.nextInt(TAILLE);
+                int y = rand.nextInt(TAILLE);
+                boolean horizontal = rand.nextBoolean();
+
+                if (peutPlacer(navire.getTaille(), x, y, horizontal)) {
+                    placerNavire(navire, x, y, horizontal);
+                    place = true;
+                }
+            }
+        }
     }
 
     /**
@@ -150,5 +175,26 @@ public class Grille {
             }
         }
         return casesRestantes == 0;
+    }
+
+    /**
+     * Affiche la grille dans la console.
+     */
+    public void afficherConsole() {
+        System.out.println("   0 1 2 3 4 5 6 7 8 9");
+        for (int y = 0; y < TAILLE; y++) {
+            System.out.print(y + "  ");
+            for (int x = 0; x < TAILLE; x++) {
+                String symbole = ". ";
+                if (matrice[y][x] == NAVIRE)
+                    symbole = "O ";
+                else if (matrice[y][x] == TOUCHE)
+                    symbole = "X ";
+                else if (matrice[y][x] == LOUPE)
+                    symbole = "~ ";
+                System.out.print(symbole);
+            }
+            System.out.println();
+        }
     }
 }

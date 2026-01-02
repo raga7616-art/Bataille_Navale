@@ -244,6 +244,11 @@ public class Jeu {
                 if (modeIA && joueurCourant == 2 && niveauIA == NiveauDifficulte.DIFFICILE) {
                     marquerAutourCoule(navireTouche, grilleCible);
                 }
+
+                // IA MOYENNE : On nettoie la liste des cibles pour ce navire
+                if (modeIA && joueurCourant == 2 && niveauIA == NiveauDifficulte.MOYENNE) {
+                    retirerCiblesDuNavireCoule(navireTouche, grilleCible);
+                }
             } else {
                 // Juste touché
                 // javax.swing.JOptionPane.showMessageDialog(null, "TOUCHÉ !"); // Optionnel,
@@ -339,9 +344,14 @@ public class Jeu {
     private void gererFinDePartie(int vainqueur) {
         phaseCourante = Phase.FIN;
 
+        String nomVainqueur = "Le JOUEUR " + vainqueur;
+        if (modeIA && vainqueur == 2) {
+            nomVainqueur = "L'IA (" + niveauIA + ")";
+        }
+
         Object[] options = { "Rejouer", "Quitter" };
         int choix = javax.swing.JOptionPane.showOptionDialog(null,
-                "FÉLICITATIONS !\n\nLe JOUEUR " + vainqueur + " a gagné la partie !",
+                "FÉLICITATIONS !\n\n" + nomVainqueur + " a gagné la partie !",
                 "Victoire",
                 javax.swing.JOptionPane.YES_NO_OPTION,
                 javax.swing.JOptionPane.INFORMATION_MESSAGE,
@@ -460,7 +470,7 @@ public class Jeu {
 
         // Visualisation : Pause de 1 seconde
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -518,5 +528,37 @@ public class Jeu {
         }
 
         jouerTour(tirX, tirY);
+    }
+
+    /**
+     * Pour l'IA Moyenne : Quand on coule un navire, on retire de la liste
+     * les cibles qui étaient "autour" de ce navire, car on sait qu'il est mort.
+     * Cela permet de repasser en mode Random plus vite.
+     */
+    private void retirerCiblesDuNavireCoule(Navire navire, Grille grille) {
+        // On scanne la grille pour retrouver les positions du navire
+        for (int y = 0; y < 10; y++) {
+            for (int x = 0; x < 10; x++) {
+                if (grille.getNavireEn(x, y) == navire) {
+                    // Pour chaque case du navire, on regarde ses 4 voisins
+                    int[][] directions = { { 0, -1 }, { 0, 1 }, { -1, 0 }, { 1, 0 } };
+                    for (int[] d : directions) {
+                        int nx = x + d[0];
+                        int ny = y + d[1];
+
+                        // Si ce voisin est dans notre liste de cibles, on l'enlève !
+                        // On utilise un itérateur pour supprimer proprement
+                        for (int i = 0; i < ciblesIA.size(); i++) {
+                            int[] target = ciblesIA.get(i);
+                            if (target[0] == nx && target[1] == ny) {
+                                ciblesIA.remove(i);
+                                i--; // On décrémente car la liste a réduit
+                                System.out.println("[IA Smart] Cible annulée (Navire coulé) : " + nx + "," + ny);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
